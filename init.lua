@@ -224,6 +224,33 @@ end, { desc = 'Open terminal (horizontal split)' })
 -- Edit file
 vim.keymap.set('n', '\\e', '<cmd>e<CR>', { desc = '[E]dit file' })
 
+-- Workaround: claude-code.nvim TermClose error when closing terminal splits
+-- The plugin's file_refresh handler calls nvim_buf_get_name on an already-deleted buffer.
+-- After all plugins load, patch TermClose autocmds to guard with buffer validity check.
+vim.api.nvim_create_autocmd('User', {
+  pattern = 'VeryLazy',
+  once = true,
+  callback = function()
+    local ok, _ = pcall(vim.api.nvim_get_autocmds, { group = 'ClaudeCodeFileRefresh', event = 'TermClose' })
+    if not ok then return end
+    local autocmds = vim.api.nvim_get_autocmds { group = 'ClaudeCodeFileRefresh', event = 'TermClose' }
+    for _, ac in ipairs(autocmds) do
+      if ac.callback then
+        local orig_cb = ac.callback
+        vim.api.nvim_del_autocmd(ac.id)
+        vim.api.nvim_create_autocmd('TermClose', {
+          group = 'ClaudeCodeFileRefresh',
+          pattern = '*',
+          callback = function(args)
+            if not vim.api.nvim_buf_is_valid(args.buf) then return end
+            return orig_cb(args)
+          end,
+        })
+      end
+    end
+  end,
+})
+
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
