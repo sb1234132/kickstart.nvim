@@ -316,7 +316,13 @@ require('lazy').setup({
     dependencies = {
       'nvim-lua/plenary.nvim', -- Required for git operations
     },
-    config = function() require('claude-code').setup() end,
+    config = function()
+      require('claude-code').setup {
+        window = {
+          position = 'vertical',
+        },
+      }
+    end,
   },
   { 'mtikekar/vim-bsv' },
 
@@ -975,7 +981,7 @@ require('lazy').setup({
 
 -- [[ Colorscheme Configuration ]]
 -- Load the colorscheme here
-vim.cmd.colorscheme 'vim'
+vim.cmd.colorscheme 'koehler'
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
