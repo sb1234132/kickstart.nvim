@@ -13,7 +13,7 @@
 ========         ||:Tutor              ||   |:::::|          ========
 ========         |'-..................-'|   |____o|          ========
 ========         `"")----------------(""`   ___________      ========
-========        /::::::::::|  |::::::::::\  \ no mouse \     ========
+========        /::::::::::|  |::::::::::\  \ no mouse \     =======
 ========       /:::========|  |==hjkl==:::\  \ required \    ========
 ========      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
 ========                                                     ========
@@ -126,6 +126,11 @@ vim.o.undofile = true
 vim.o.ignorecase = true
 vim.o.smartcase = true
 
+-- Show "search hit BOTTOM, continuing at TOP"
+-- instead of only the [N/M] W-style search count.
+vim.opt.shortmess:append 'S' -- use old-style search messages
+vim.opt.shortmess:remove 's' -- ensure wrap messages are not suppressed
+
 -- Keep signcolumn on by default
 vim.o.signcolumn = 'yes'
 
@@ -177,7 +182,7 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 -- Map jk to <Esc> in insert mode
 vim.keymap.set('i', 'jk', '<Esc>')
 
-vim.keymap.set('n', '<leader>cc', '<cmd>ClaudeCode<CR>', { desc = 'Toggle Claude Code' })
+-- vim.keymap.set('n', '<leader>cc', '<cmd>ClaudeCode<CR>', { desc = 'Toggle Claude Code' })
 
 -- Diagnostic Config & Keymaps
 -- See :help vim.diagnostic.Opts
@@ -227,29 +232,29 @@ vim.keymap.set('n', '\\e', '<cmd>e<CR>', { desc = '[E]dit file' })
 -- Workaround: claude-code.nvim TermClose error when closing terminal splits
 -- The plugin's file_refresh handler calls nvim_buf_get_name on an already-deleted buffer.
 -- After all plugins load, patch TermClose autocmds to guard with buffer validity check.
-vim.api.nvim_create_autocmd('User', {
-  pattern = 'VeryLazy',
-  once = true,
-  callback = function()
-    local ok, _ = pcall(vim.api.nvim_get_autocmds, { group = 'ClaudeCodeFileRefresh', event = 'TermClose' })
-    if not ok then return end
-    local autocmds = vim.api.nvim_get_autocmds { group = 'ClaudeCodeFileRefresh', event = 'TermClose' }
-    for _, ac in ipairs(autocmds) do
-      if ac.callback then
-        local orig_cb = ac.callback
-        vim.api.nvim_del_autocmd(ac.id)
-        vim.api.nvim_create_autocmd('TermClose', {
-          group = 'ClaudeCodeFileRefresh',
-          pattern = '*',
-          callback = function(args)
-            if not vim.api.nvim_buf_is_valid(args.buf) then return end
-            return orig_cb(args)
-          end,
-        })
-      end
-    end
-  end,
-})
+--vim.api.nvim_create_autocmd('User', {
+--  pattern = 'VeryLazy',
+--  once = true,
+--  callback = function()
+--    local ok, _ = pcall(vim.api.nvim_get_autocmds, { group = 'ClaudeCodeFileRefresh', event = 'TermClose' })
+--    if not ok then return end
+--    local autocmds = vim.api.nvim_get_autocmds { group = 'ClaudeCodeFileRefresh', event = 'TermClose' }
+--    for _, ac in ipairs(autocmds) do
+--      if ac.callback then
+--        local orig_cb = ac.callback
+--        vim.api.nvim_del_autocmd(ac.id)
+--        vim.api.nvim_create_autocmd('TermClose', {
+--          group = 'ClaudeCodeFileRefresh',
+--          pattern = '*',
+--          callback = function(args)
+--            if not vim.api.nvim_buf_is_valid(args.buf) then return end
+--            return orig_cb(args)
+--          end,
+--        })
+--      end
+--    end
+--  end,
+--})
 
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
@@ -311,19 +316,19 @@ rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added via a link or github org/name. To run setup automatically, use `opts = {}`
   { 'NMAC427/guess-indent.nvim', opts = {} },
-  {
-    'greggh/claude-code.nvim',
-    dependencies = {
-      'nvim-lua/plenary.nvim', -- Required for git operations
-    },
-    config = function()
-      require('claude-code').setup {
-        window = {
-          position = 'vertical',
-        },
-      }
-    end,
-  },
+  --  {
+  --    'greggh/claude-code.nvim',
+  --    dependencies = {
+  --      'nvim-lua/plenary.nvim', -- Required for git operations
+  --    },
+  --    config = function()
+  --      require('claude-code').setup {
+  --        window = {
+  --          position = 'vertical',
+  --        },
+  --      }
+  --    end,
+  --  },
   { 'mtikekar/vim-bsv' },
 
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
@@ -449,13 +454,14 @@ require('lazy').setup({
       require('telescope').setup {
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
-        --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
-        -- pickers = {}
+        defaults = {
+          preview = {
+            timeout = 5000, -- Increase preview timeout from default (500ms) to 5 seconds
+          },
+          -- mappings = {
+          --   i = { ['<c-enter>'] = 'to_fuzzy_refine' },
+          -- },
+        },
         extensions = {
           ['ui-select'] = { require('telescope.themes').get_dropdown() },
         },
@@ -531,6 +537,8 @@ require('lazy').setup({
           builtin.live_grep {
             grep_open_files = true,
             prompt_title = 'Live Grep in Open Files',
+            disable_coordinates = true,
+            previewer = true,
           }
         end,
         { desc = '[S]earch [/] in Open Files' }
