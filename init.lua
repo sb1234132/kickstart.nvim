@@ -175,6 +175,22 @@ vim.o.scrolloff = 10
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
+-- [[ Autoread Configuration ]]
+-- Enable autoread to automatically reload files changed externally (e.g., by Claude Code)
+-- See `:help 'autoread'`
+vim.o.autoread = true
+
+-- Automatically check for file changes when focus is regained or cursor holds
+vim.api.nvim_create_autocmd({ 'FocusGained', 'CursorHold' }, {
+  pattern = '*',
+  callback = function()
+    if vim.fn.getcmdtype() == '' then
+      vim.cmd 'checktime'
+    end
+  end,
+  desc = 'Check for external file changes'
+})
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -184,6 +200,9 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Map jk to <Esc> in insert mode
 vim.keymap.set('i', 'jk', '<Esc>')
+
+-- Insert comment block with Ctrl+_
+vim.keymap.set('i', '<C-_>', '/* */<Esc>hhi ', { desc = 'Insert comment block' })
 
 -- vim.keymap.set('n', '<leader>cc', '<cmd>ClaudeCode<CR>', { desc = 'Toggle Claude Code' })
 
@@ -764,20 +783,8 @@ require('lazy').setup({
     },
     opts = {
       notify_on_error = false,
-      format_on_save = function(bufnr)
-        -- Disable "format_on_save lsp_fallback" for languages that don't
-        -- have a well standardized coding style. You can add additional
-        -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
-        if disable_filetypes[vim.bo[bufnr].filetype] then
-          return nil
-        else
-          return {
-            timeout_ms = 500,
-            lsp_format = 'fallback',
-          }
-        end
-      end,
+      -- Disable auto-format-on-save to prevent unwanted whitespace changes
+      format_on_save = false,
       formatters_by_ft = {
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
