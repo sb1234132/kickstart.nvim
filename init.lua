@@ -162,7 +162,10 @@ vim.o.inccommand = 'split'
 vim.o.cursorline = true
 
 -- Enable true color support
-vim.o.termguicolors = false
+vim.o.termguicolors = true
+
+-- Disable text concealing
+vim.o.conceallevel = 0
 
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.o.scrolloff = 10
@@ -289,6 +292,18 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function() vim.hl.on_yank() end,
 })
 
+-- Disable text concealing for bsv files
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'bsv',
+  group = vim.api.nvim_create_augroup('bsv-conceal-disable', { clear = true }),
+  callback = function()
+    vim.schedule(function()
+      vim.opt_local.conceallevel = 0
+      vim.opt_local.concealcursor = ''
+    end)
+  end,
+})
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -330,6 +345,7 @@ require('lazy').setup({
   --    end,
   --  },
   { 'mtikekar/vim-bsv' },
+  { 'michaeljsmith/vim-indent-object' },
 
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
   -- If you prefer to call `setup` explicitly, use:
